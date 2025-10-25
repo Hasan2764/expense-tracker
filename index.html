@@ -3,261 +3,563 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Simple Expense Tracker</title>
+<title>Expense Tracker — Dark Mode + Features</title>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <style>
-  :root{--maxw:900px;--accent:#1976d2;}
-  body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:#f4f6f8;color:#111;display:flex;align-items:flex-start;justify-content:center;padding:28px;}
-  .app{width:100%;max-width:var(--maxw);background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(18,20,24,0.06);padding:18px;box-sizing:border-box;}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
-  header h1{font-size:18px;margin:0}
-  .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
-  label{font-size:13px;color:#333}
-  input[type="text"], input[type="number"], input[type="date"], select{
-    padding:8px 10px;border-radius:6px;border:1px solid #d7dbe0;background:#fff;min-width:0;
+  :root{
+    --bg:#000;
+    --card:#0b0b0b;
+    --muted:#9aa3ad;
+    --accent:#00aaff;
+    --accent-2:#00cc88;
+    --border:#1a1a1a;
+    --danger:#ff5555;
+    --table-odd:#0f0f0f;
   }
-  button{background:var(--accent);color:#fff;border:none;padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:600}
-  .muted{color:#666;font-size:13px}
-  form .col{display:flex;flex-direction:column;gap:6px}
-  .controls{display:flex;gap:8px;align-items:center}
-  .totals{display:flex;gap:14px;align-items:center;margin-top:6px}
+  html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Arial,sans-serif;}
+  .wrap{max-width:1100px;margin:18px auto;padding:16px;}
+  .app{background:linear-gradient(180deg,var(--card),#080808);border:1px solid var(--border);padding:16px;border-radius:10px;}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  header h1{margin:0;font-size:18px}
+  .muted{color:var(--muted);font-size:13px}
+
+  /* form */
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:end}
+  .col{display:flex;flex-direction:column;gap:6px}
+  label{font-size:13px;color:var(--muted)}
+  input,select,textarea{
+    background:#0b0b0b;border:1px solid var(--border);color:#fff;padding:8px;border-radius:6px;min-width:0;
+  }
+  input[type="file"]{padding:6px}
+  .btn{background:var(--accent);color:#000;border:none;padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:700}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:#fff;padding:7px 10px;border-radius:8px;cursor:pointer}
+  .btn-danger{background:var(--danger);color:#fff;border:none;padding:7px 10px;border-radius:8px;cursor:pointer}
+  .small{padding:6px 8px;font-size:13px}
+
+  /* controls */
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .controls .search{min-width:220px;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:#0b0b0b;color:#fff}
+
+  /* table */
   .panel{margin-top:12px}
-  table{width:100%;border-collapse:collapse;margin-top:10px}
-  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #eef0f3;font-size:14px}
-  th{font-weight:700;color:#333;background:#fafafa}
-  td.amount{font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px;background:transparent}
+  thead th{background:#071017;padding:10px;text-align:left;color:#cfeffd;border-bottom:1px solid var(--border)}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border)}
+  tbody tr:nth-child(odd){background:var(--table-odd)}
+  .amount{font-weight:700}
+  .actions button{margin-right:6px}
+
+  .totals{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:8px}
   .right{margin-left:auto}
-  .small-btn{background:#e6eefc;color:var(--accent);padding:6px 8px;border-radius:6px;border:1px solid rgba(25,118,210,0.08);cursor:pointer}
-  .danger{background:#ffecec;color:#c33;border:none;padding:6px 8px;border-radius:6px}
-  .flex-between{display:flex;align-items:center;justify-content:space-between}
-  footer{margin-top:14px;font-size:13px;color:#666;text-align:center}
-  @media (max-width:640px){
-    header{flex-direction:column;align-items:flex-start}
-    .row{flex-direction:column}
-    .controls{width:100%;justify-content:space-between}
+
+  /* charts */
+  .charts{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+  .chart-card{background:#071017;padding:10px;border-radius:8px;border:1px solid var(--border);flex:1;min-width:260px}
+
+  /* print */
+  @media print{
+    body{background:#fff;color:#000}
+    .app{border:none;background:#fff}
+    .no-print{display:none}
+    table thead th{color:#000}
+  }
+
+  /* small screens */
+  @media (max-width:720px){
+    .form-row{flex-direction:column;align-items:stretch}
+    .controls{flex-direction:column;align-items:stretch}
+    .charts{flex-direction:column}
   }
 </style>
 </head>
 <body>
-<div class="app" role="main">
-  <header>
-    <h1>Simple Expense Tracker</h1>
-    <div class="muted">Saves to your browser — private to you</div>
-  </header>
-
-  <section aria-labelledby="add">
-    <form id="form" onsubmit="return false">
-      <div class="row">
-        <div class="col" style="flex:1;min-width:160px">
-          <label>Date</label>
-          <input id="date" type="date" required>
-        </div>
-        <div class="col" style="width:120px">
-          <label>Amount</label>
-          <input id="amount" type="number" step="0.01" min="0" required>
-        </div>
-        <div class="col" style="min-width:140px">
-          <label>Category</label>
-          <select id="category">
-            <option value="Food">Food</option>
-            <option value="Transport">Transport</option>
-            <option value="Bills">Bills</option>
-            <option value="Salary">Salary</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="col" style="flex:1;min-width:160px">
-          <label>Note (optional)</label>
-          <input id="note" type="text" placeholder="e.g., lunch, taxi">
-        </div>
-
-        <div class="controls" style="align-self:end">
-          <button id="addBtn">Add Expense</button>
-        </div>
+<div class="wrap">
+  <div class="app" role="main">
+    <header>
+      <div>
+        <h1>Expense Tracker</h1>
+        <div class="muted">Dark mode • Local-only by default</div>
       </div>
-    </form>
+      <div class="no-print">
+        <button id="printBtn" class="btn small">Print / Save PDF</button>
+      </div>
+    </header>
 
+    <!-- Add form -->
+    <section aria-labelledby="add">
+      <form id="form" onsubmit="return false">
+        <div class="form-row">
+          <div class="col" style="width:160px">
+            <label>Date</label>
+            <input id="date" type="date" required>
+          </div>
+          <div class="col" style="width:120px">
+            <label>Amount</label>
+            <input id="amount" type="number" step="0.01" min="0" required>
+          </div>
+          <div class="col" style="width:160px">
+            <label>Category</label>
+            <select id="category">
+              <option>Food</option><option>Transport</option><option>Bills</option><option>Salary</option><option>Other</option>
+            </select>
+          </div>
+          <div class="col" style="flex:1">
+            <label>Note</label>
+            <input id="note" type="text" placeholder="e.g., lunch, taxi">
+          </div>
+          <div class="col" style="width:160px">
+            <label>Options</label>
+            <div style="display:flex;gap:8px">
+              <label style="display:flex;gap:6px;align-items:center"><input id="recurring" type="checkbox"> Recurring (monthly)</label>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:flex-end;gap:8px">
+            <button id="addBtn" class="btn">Add</button>
+            <button id="updateBtn" class="btn-ghost" style="display:none">Save</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Import / export / filter controls -->
+      <div class="controls no-print">
+        <input id="search" class="search" placeholder="Search by note or category">
+        <label style="color:var(--muted)">Filter month:
+          <select id="filterMonth"></select>
+        </label>
+
+        <label style="color:var(--muted)"><select id="sortBy">
+          <option value="date_desc">Sort: Date ↓</option>
+          <option value="date_asc">Sort: Date ↑</option>
+          <option value="amount_desc">Sort: Amount ↓</option>
+          <option value="amount_asc">Sort: Amount ↑</option>
+        </select></label>
+
+        <label for="csvFile" class="btn-ghost small" style="cursor:pointer">Import CSV
+          <input id="csvFile" type="file" accept=".csv" style="display:none">
+        </label>
+
+        <button id="exportCsv" class="small btn-ghost">Export CSV</button>
+        <button id="clearAll" class="btn-danger">Clear All</button>
+
+        <button id="genRecurring" class="btn small right">Generate Recurring</button>
+      </div>
+
+    </section>
+
+    <!-- Totals & chart -->
     <div class="totals">
-      <div class="muted">Showing:
-        <select id="filterMonth">
-          <option value="all">All time</option>
-        </select>
-      </div>
-      <div style="margin-left:auto">
-        <strong>Total:</strong> <span id="total">0.00</span>
-      </div>
-      <div style="margin-left:8px">
-        <button id="exportCsv" class="small-btn">Export CSV</button>
-      </div>
-      <div style="margin-left:8px">
-        <button id="clearAll" class="danger">Clear All</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="flex-between">
-      <strong>Expenses</strong>
-      <div class="muted" id="count"></div>
+      <div class="muted">Showing: <span id="count" style="margin-left:6px"></span></div>
+      <div style="font-weight:800">Total: <span id="total">0.00</span></div>
     </div>
 
-    <table id="tbl" aria-live="polite">
-      <thead>
-        <tr><th>Date</th><th>Category</th><th>Note</th><th>Amount</th><th>Action</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+    <!-- Table -->
+    <section class="panel">
+      <table id="tbl" aria-live="polite">
+        <thead>
+          <tr>
+            <th>S#</th>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Note</th>
+            <th>Amount</th>
+            <th class="no-print">Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-  <footer>Tip: this stores data in your browser. To keep across devices later we can connect Google Sheets or Firebase.</footer>
+    <!-- Charts -->
+    <div class="charts">
+      <div class="chart-card">
+        <strong>Monthly Totals</strong>
+        <canvas id="monthlyChart" height="140"></canvas>
+      </div>
+      <div class="chart-card">
+        <strong>By Category</strong>
+        <canvas id="categoryChart" height="140"></canvas>
+      </div>
+    </div>
+
+    <footer class="muted no-print">Tip: Import CSV columns: date,category,note,amount. Recurring items are generated when you press "Generate Recurring".</footer>
+  </div>
 </div>
 
 <script>
-  // Key names
-  const STORAGE_KEY = 'simple_expenses_v1';
+/* -----------------------
+  Expense Tracker v2
+  - localStorage key: simple_expenses_v2
+  - features: edit, delete, search, sort, import CSV, export CSV, charts, recurring, print
+------------------------ */
 
-  // Elements
-  const dateInput = document.getElementById('date');
-  const amountInput = document.getElementById('amount');
-  const categoryInput = document.getElementById('category');
-  const noteInput = document.getElementById('note');
-  const addBtn = document.getElementById('addBtn');
-  const tbody = document.querySelector('#tbl tbody');
-  const totalEl = document.getElementById('total');
-  const countEl = document.getElementById('count');
-  const filterMonth = document.getElementById('filterMonth');
-  const exportCsv = document.getElementById('exportCsv');
-  const clearAll = document.getElementById('clearAll');
+const STORAGE_KEY = 'simple_expenses_v2';
 
-  // In-memory list
-  let expenses = [];
+/* elements */
+const dateInput = document.getElementById('date');
+const amountInput = document.getElementById('amount');
+const categoryInput = document.getElementById('category');
+const noteInput = document.getElementById('note');
+const addBtn = document.getElementById('addBtn');
+const updateBtn = document.getElementById('updateBtn');
 
-  // Helpers
-  function load(){
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      expenses = raw ? JSON.parse(raw) : [];
-    } catch(e){
-      expenses = [];
+const tbody = document.querySelector('#tbl tbody');
+const totalEl = document.getElementById('total');
+const countEl = document.getElementById('count');
+const filterMonth = document.getElementById('filterMonth');
+const searchInput = document.getElementById('search');
+const sortBy = document.getElementById('sortBy');
+const exportCsvBtn = document.getElementById('exportCsv');
+const clearAllBtn = document.getElementById('clearAll');
+const csvFile = document.getElementById('csvFile');
+const genRecurringBtn = document.getElementById('genRecurring');
+const printBtn = document.getElementById('printBtn');
+
+let expenses = []; // stored items
+let editingId = null; // id being edited
+
+// Charts
+let monthlyChart=null, categoryChart=null;
+
+/* ---- Helpers ---- */
+function load(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    expenses = raw ? JSON.parse(raw) : [];
+  } catch(e){
+    expenses = [];
+  }
+}
+
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+}
+
+function uid(){ return Date.now() + Math.floor(Math.random()*999); }
+
+function formatMoney(v){ return Number(v||0).toFixed(2); }
+
+function monthKeyFromDate(d){
+  const dt = new Date(d);
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
+}
+function monthLabelFromKey(k){
+  if(!k || k==='all') return 'All time';
+  const [y,m] = k.split('-');
+  const dt = new Date(Number(y), Number(m)-1);
+  return dt.toLocaleString(undefined,{year:'numeric',month:'short'});
+}
+
+/* populate month filter with human-friendly labels */
+function refreshMonthFilter(){
+  const months = new Set(expenses.map(e => monthKeyFromDate(e.date)));
+  const arr = Array.from(months).sort().reverse();
+  filterMonth.innerHTML = '<option value="all">All time</option>';
+  arr.forEach(m=>{
+    const opt = document.createElement('option'); opt.value=m; opt.textContent=monthLabelFromKey(m); filterMonth.appendChild(opt);
+  })
+}
+
+/* render table with search & sort & filter */
+function render(){
+  const search = (searchInput.value||'').toLowerCase().trim();
+  const filter = filterMonth.value || 'all';
+  const sortVal = sortBy.value || 'date_desc';
+
+  // sort copy of expenses
+  let list = expenses.slice();
+
+  // Apply filter
+  if(filter !== 'all') list = list.filter(e => monthKeyFromDate(e.date) === filter);
+
+  // Search
+  if(search){
+    list = list.filter(e => ((e.note||'') + ' ' + (e.category||'')).toLowerCase().includes(search));
+  }
+
+  // Sorting
+  if(sortVal.startsWith('date')){
+    list.sort((a,b)=> new Date(a.date) - new Date(b.date));
+    if(sortVal==='date_desc') list.reverse();
+  } else {
+    list.sort((a,b)=> Number(a.amount) - Number(b.amount));
+    if(sortVal==='amount_desc') list.reverse();
+  }
+
+  // render rows
+  tbody.innerHTML = '';
+  let total=0; let idx=0;
+  for(const e of list){
+    idx++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${idx}</td>
+      <td>${e.date}</td>
+      <td>${escapeHtml(e.category)}</td>
+      <td>${escapeHtml(e.note||'')}</td>
+      <td class="amount">${formatMoney(e.amount)}</td>
+      <td class="no-print actions">
+        <button class="btn-ghost small" data-action="edit" data-id="${e.id}">Edit</button>
+        <button class="btn-ghost small" data-action="del" data-id="${e.id}">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    total += Number(e.amount);
+  }
+
+  totalEl.textContent = formatMoney(total);
+  countEl.textContent = (list.length)+' items';
+
+  // wire action buttons
+  tbody.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', e=>{
+      const id = b.dataset.id;
+      const action = b.dataset.action;
+      if(action==='del') removeById(id);
+      if(action==='edit') startEdit(id);
+    })
+  });
+
+  // update charts
+  updateCharts();
+}
+
+/* escape */
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+/* add expense */
+addBtn.addEventListener('click', ()=>{
+  const date = dateInput.value || new Date().toISOString().slice(0,10);
+  const amount = parseFloat(amountInput.value || 0);
+  const category = categoryInput.value || 'Other';
+  const note = noteInput.value.trim();
+  const recurring = document.getElementById('recurring').checked;
+
+  if(!date || isNaN(amount) || amount<=0){ alert('Please enter valid date & positive amount'); return; }
+
+  const obj = { id: uid(), date, amount: Number(amount.toFixed(2)), category, note, recurring: !!recurring };
+  expenses.push(obj);
+  save();
+  refreshMonthFilter();
+  render();
+  // reset inputs
+  amountInput.value=''; noteInput.value=''; document.getElementById('recurring').checked = false;
+});
+
+/* start editing */
+function startEdit(id){
+  const item = expenses.find(x => String(x.id)===String(id));
+  if(!item) return;
+  editingId = id;
+  dateInput.value = item.date;
+  amountInput.value = item.amount;
+  categoryInput.value = item.category;
+  noteInput.value = item.note || '';
+  document.getElementById('recurring').checked = !!item.recurring;
+  addBtn.style.display = 'none';
+  updateBtn.style.display = 'inline-block';
+}
+
+/* save update */
+updateBtn.addEventListener('click', ()=>{
+  if(!editingId) return;
+  const item = expenses.find(x => String(x.id)===String(editingId));
+  if(!item) return;
+  item.date = dateInput.value || item.date;
+  item.amount = Number(parseFloat(amountInput.value||0).toFixed(2));
+  item.category = categoryInput.value || item.category;
+  item.note = noteInput.value.trim();
+  item.recurring = !!document.getElementById('recurring').checked;
+  save();
+  editingId = null;
+  updateBtn.style.display='none';
+  addBtn.style.display='inline-block';
+  // reset form
+  amountInput.value=''; noteInput.value=''; document.getElementById('recurring').checked=false;
+  refreshMonthFilter(); render();
+});
+
+/* remove by id */
+function removeById(id){
+  if(!confirm('Delete this entry?')) return;
+  expenses = expenses.filter(x => String(x.id)!==String(id));
+  save(); refreshMonthFilter(); render();
+}
+
+/* export CSV */
+exportCsvBtn.addEventListener('click', ()=>{
+  if(!expenses.length){ alert('No expenses'); return; }
+  const cols = ['date','category','note','amount','recurring'];
+  const rows = expenses.slice().sort((a,b)=> new Date(a.date)-new Date(b.date)).map(e =>
+    cols.map(c => `"${String(e[c]||'').replace(/"/g,'""')}"`).join(',')
+  );
+  const csv = [cols.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='expenses.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* import CSV (simple parser) */
+csvFile.addEventListener('change', (ev)=>{
+  const file = ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const text = e.target.result;
+    // simple CSV parse: split lines, assume header present
+    const lines = text.split(/\r?\n/).filter(l=>l.trim());
+    if(lines.length<2){ alert('CSV appears empty'); return; }
+    const header = lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());
+    const idxDate = header.indexOf('date');
+    const idxCat = header.indexOf('category');
+    const idxNote = header.indexOf('note');
+    const idxAmt = header.indexOf('amount');
+    if(idxDate<0 || idxAmt<0){ alert('CSV must have columns: date and amount (optional: category,note)'); return; }
+
+    let added=0;
+    for(let i=1;i<lines.length;i++){
+      const cols = parseCsvLine(lines[i]);
+      if(cols.length<1) continue;
+      const date = cols[idxDate] ? cols[idxDate].replace(/"/g,'').trim() : null;
+      const amount = cols[idxAmt] ? parseFloat(cols[idxAmt].replace(/"/g,'').trim()) : null;
+      const category = (idxCat>=0 && cols[idxCat]) ? cols[idxCat].replace(/"/g,'').trim() : 'Other';
+      const note = (idxNote>=0 && cols[idxNote]) ? cols[idxNote].replace(/"/g,'').trim() : '';
+      if(!date || !amount || isNaN(amount)) continue;
+      expenses.push({id:uid(), date, amount: Number(amount.toFixed(2)), category, note, recurring:false});
+      added++;
+    }
+    save(); refreshMonthFilter(); render();
+    alert('Imported ' + added + ' rows');
+  }
+  reader.readAsText(file);
+  // reset input
+  ev.target.value='';
+});
+
+/* simple CSV line parse to handle quoted commas */
+function parseCsvLine(line){
+  const res=[]; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='\"'){ inQ=!inQ; continue; }
+    if(ch===',' && !inQ){ res.push(cur); cur=''; continue; }
+    cur+=ch;
+  }
+  if(cur!=='') res.push(cur);
+  return res;
+}
+
+/* Clear all */
+clearAllBtn.addEventListener('click', ()=>{
+  if(!confirm('Clear ALL expenses? This cannot be undone.')) return;
+  expenses=[]; save(); refreshMonthFilter(); render();
+});
+
+/* Generate recurring items:
+   For each recurring expense, create one entry for each missing month from its last occurrence up to current month (simple approach)
+*/
+genRecurringBtn.addEventListener('click', ()=>{
+  if(!expenses.length){ alert('No expenses'); return; }
+  const recurring = expenses.filter(e=>e.recurring);
+  if(!recurring.length){ alert('No recurring items found'); return; }
+  let created=0;
+  const today = new Date();
+  const currentKey = monthKeyFromDate(today.toISOString().slice(0,10));
+  // For each recurring item, find latest month for that item's pattern
+  for(const r of recurring){
+    // find last occurrence in expenses with same note+amount+category (heuristic)
+    const matches = expenses.filter(x => x.category===r.category && Number(x.amount)===Number(r.amount) && (x.note||'')=== (r.note||''));
+    const last = matches.slice().sort((a,b)=> new Date(b.date)- new Date(a.date))[0];
+    const start = last ? new Date(last.date) : new Date(r.date);
+    let ptr = new Date(start.getFullYear(), start.getMonth()+1, 1); // next month
+    while(monthKeyFromDate(ptr.toISOString().slice(0,10)) <= currentKey){
+      // create occurrence on same day-of-month if possible, else first of month
+      const day = Math.min(new Date(ptr.getFullYear(), ptr.getMonth()+1, 0).getDate(), (new Date(r.date)).getDate());
+      const d = new Date(ptr.getFullYear(), ptr.getMonth(), day);
+      const iso = d.toISOString().slice(0,10);
+      // avoid duplicates exactly same date+amount+category
+      const exists = expenses.some(x => x.date===iso && Number(x.amount)===Number(r.amount) && x.category===r.category && (x.note||'')=== (r.note||''));
+      if(!exists){
+        expenses.push({ id: uid(), date: iso, amount: r.amount, category: r.category, note: r.note, recurring: true });
+        created++;
+      }
+      ptr.setMonth(ptr.getMonth()+1);
     }
   }
-  function save(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-  }
-  function formatMoney(v){ return parseFloat(v).toFixed(2); }
-  function monthKeyFromDate(d){
-    const dt = new Date(d);
-    return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
-  }
+  if(created>0) { save(); refreshMonthFilter(); render(); alert('Created '+created+' recurring items.'); }
+  else alert('No new recurring items needed.');
+});
 
-  // Populate month filter
-  function refreshMonthFilter(){
-    const months = new Set(expenses.map(e => monthKeyFromDate(e.date)));
-    // clear options except 'all'
-    filterMonth.innerHTML = '<option value="all">All time</option>';
-    Array.from(months).sort().reverse().forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m;
-      // human label like "2025-10"
-      opt.textContent = m;
-      filterMonth.appendChild(opt);
+/* Print / Save as PDF */
+printBtn.addEventListener('click', ()=> {
+  // show only printable content: use window.print (CSS handles .no-print)
+  window.print();
+});
+
+/* Charts */
+function updateCharts(){
+  // monthly totals
+  const grouped = {};
+  for(const e of expenses){
+    const key = monthKeyFromDate(e.date);
+    grouped[key] = (grouped[key]||0) + Number(e.amount);
+  }
+  const months = Object.keys(grouped).sort();
+  const labels = months.map(m => monthLabelFromKey(m));
+  const data = months.map(m => grouped[m].toFixed(2));
+
+  if(!monthlyChart){
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    monthlyChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ label:'Total', data, backgroundColor: 'rgba(0,170,255,0.7)' }] },
+      options: { responsive:true, maintainAspectRatio:false }
     });
+  } else {
+    monthlyChart.data.labels = labels; monthlyChart.data.datasets[0].data = data; monthlyChart.update();
   }
 
-  // Render list (apply month filter)
-  function render(){
-    const filter = filterMonth.value;
-    tbody.innerHTML = '';
-    let total = 0;
-    let count = 0;
-    const list = expenses.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
-    list.forEach((e, idx) => {
-      if (filter !== 'all' && monthKeyFromDate(e.date) !== filter) return;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${e.date}</td>
-        <td>${escapeHtml(e.category)}</td>
-        <td>${escapeHtml(e.note||'')}</td>
-        <td class="amount">${formatMoney(e.amount)}</td>
-        <td><button class="small-btn" data-index="${idx}">Delete</button></td>`;
-      tbody.appendChild(tr);
-      total += Number(e.amount);
-      count++;
+  // category totals
+  const cat = {};
+  for(const e of expenses){
+    cat[e.category] = (cat[e.category]||0) + Number(e.amount);
+  }
+  const catLabels = Object.keys(cat);
+  const catData = catLabels.map(k => cat[k].toFixed(2));
+  if(!categoryChart){
+    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+    categoryChart = new Chart(ctx2, {
+      type: 'pie',
+      data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: [ '#00aaff','#00cc88','#ffb74d','#ef5350','#9575cd' ] }] },
+      options: { responsive:true, maintainAspectRatio:false }
     });
-    totalEl.textContent = formatMoney(total);
-    countEl.textContent = count + ' items';
+  } else {
+    categoryChart.data.labels = catLabels; categoryChart.data.datasets[0].data = catData; categoryChart.update();
   }
+}
 
-  // safe escape
-  function escapeHtml(str){
-    return String(str||'').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  }
+/* start editing etc. already defined above */
+/* init */
+(function init(){
+  load();
+  // default date
+  dateInput.value = (new Date()).toISOString().slice(0,10);
+  refreshMonthFilter();
+  render();
+})();
 
-  // Add expense
-  addBtn.addEventListener('click', ()=>{
-    const date = dateInput.value || (new Date()).toISOString().slice(0,10);
-    const amount = parseFloat(amountInput.value || 0);
-    const category = categoryInput.value;
-    const note = noteInput.value.trim();
-    if (!date || !amount || isNaN(amount) || amount <= 0) {
-      alert('Please enter a valid date and positive amount.');
-      return;
-    }
-    const obj = { id: Date.now(), date, amount: Number(amount.toFixed(2)), category, note };
-    expenses.push(obj);
-    save();
-    refreshMonthFilter();
-    render();
-    // reset inputs
-    amountInput.value=''; noteInput.value='';
-  });
+/* Listen for filters and controls */
+searchInput.addEventListener('input', ()=> render());
+filterMonth.addEventListener('change', ()=> render());
+sortBy.addEventListener('change', ()=> render());
 
-  // Delete handler (event delegation)
-  tbody.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    const idx = Number(btn.dataset.index);
-    // idx corresponds to sorted array; map to actual
-    const sorted = expenses.slice().sort((a,b)=> new Date(b.date)-new Date(a.date));
-    const item = sorted[idx];
-    if (!item) return;
-    if (!confirm('Delete this entry?')) return;
-    // remove by id
-    expenses = expenses.filter(x => x.id !== item.id);
-    save();
-    refreshMonthFilter();
-    render();
-  });
+/* Utility: handle Enter in search to clear focus */
+searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ searchInput.value=''; render(); } });
 
-  // Export CSV
-  exportCsv.addEventListener('click', ()=>{
-    if (!expenses.length){ alert('No expenses to export'); return; }
-    const cols = ['date','category','note','amount'];
-    const rows = expenses.slice().sort((a,b)=> new Date(a.date)-new Date(b.date)).map(e => 
-      cols.map(c => `"${String(e[c]||'').replace(/"/g,'""')}"`).join(',')
-    );
-    const csv = [cols.join(','), ...rows].join('\r\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'expenses.csv'; document.body.appendChild(a); a.click();
-    a.remove(); URL.revokeObjectURL(url);
-  });
-
-  // Clear all
-  clearAll.addEventListener('click', ()=>{
-    if (!confirm('Clear ALL expenses? This cannot be undone.')) return;
-    expenses = []; save(); refreshMonthFilter(); render();
-  });
-
-  // Month filter change
-  filterMonth.addEventListener('change', render);
-
-  // Initialize default date to today
-  (function init(){
-    load();
-    // set today date
-    dateInput.value = (new Date()).toISOString().slice(0,10);
-    refreshMonthFilter();
-    render();
-  })();
 </script>
 </body>
 </html>
