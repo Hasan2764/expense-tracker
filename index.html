@@ -60,11 +60,51 @@
   .chart-card{background:#071017;padding:10px;border-radius:8px;border:1px solid var(--border);flex:1;min-width:260px}
 
   /* print */
-  @media print{
-    body{background:#fff;color:#000}
-    .app{border:none;background:#fff}
-    .no-print{display:none}
-    table thead th{color:#000}
+  /* ---------- PRINT STYLES (A4 single-page friendly) ---------- */
+  @page { size: A4; margin: 8mm; }
+  @media print {
+    html, body {
+      background: #fff !important;
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      height: auto;
+    }
+
+    /* hide interactive controls */
+    .no-print, #csvFile, input[type="file"], .btn, .btn-ghost, .btn-danger, .controls { display: none !important; }
+
+    /* compact card */
+    .app {
+      background: #fff !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 6px !important;
+      margin: 0;
+      width: auto !important;
+      transform: none !important;
+    }
+
+    /* reduce typography and spacing */
+    body, .app, table, th, td { font-size: 10px !important; line-height: 1.05 !important; color: #000 !important; }
+    header h1 { font-size: 14px !important; }
+    label { font-size: 10px !important; }
+
+    /* compact table */
+    table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+    thead th { padding: 6px 6px; }
+    th, td { padding: 6px 6px; border-bottom: 1px solid #ccc; }
+
+    /* don't show charts (they expand the page) */
+    .charts, .chart-card, canvas { display: none !important; }
+
+    /* avoid page breaks inside rows */
+    tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+
+    /* reduce footer */
+    footer { display: none !important; }
+
+    /* scale slightly if content still large (adjust 0.95 down if still more than 1 page) */
+    .print-scale { transform: scale(0.95); transform-origin: top left; }
   }
 
   /* small screens */
@@ -191,9 +231,9 @@
 
 <script>
 /* -----------------------
-  Expense Tracker v2
+  Expense Tracker final
   - localStorage key: simple_expenses_v2
-  - features: edit, delete, search, sort, import CSV, export CSV, charts, recurring, print
+  - features: edit, delete, search, sort, import CSV, export CSV, charts, recurring, print (A4 single-page attempt)
 ------------------------ */
 
 const STORAGE_KEY = 'simple_expenses_v2';
@@ -494,11 +534,33 @@ genRecurringBtn.addEventListener('click', ()=>{
   else alert('No new recurring items needed.');
 });
 
-/* Print / Save as PDF */
-printBtn.addEventListener('click', ()=> {
-  // show only printable content: use window.print (CSS handles .no-print)
-  window.print();
+/* Print / Save as PDF preparation */
+function prepareForPrint() {
+  document.querySelector('.app').classList.add('print-scale');
+  try {
+    if (monthlyChart) monthlyChart.resize();
+    if (categoryChart) categoryChart.resize();
+  } catch (e) { /* ignore */ }
+}
+
+function cleanupAfterPrint() {
+  document.querySelector('.app').classList.remove('print-scale');
+  try {
+    if (monthlyChart) monthlyChart.resize();
+    if (categoryChart) categoryChart.resize();
+  } catch (e) { /* ignore */ }
+}
+
+printBtn.addEventListener('click', () => {
+  prepareForPrint();
+  setTimeout(() => {
+    window.print();
+    setTimeout(cleanupAfterPrint, 1000);
+  }, 120);
 });
+
+window.addEventListener('beforeprint', prepareForPrint);
+window.addEventListener('afterprint', cleanupAfterPrint);
 
 /* Charts */
 function updateCharts(){
@@ -517,7 +579,7 @@ function updateCharts(){
     monthlyChart = new Chart(ctx, {
       type: 'bar',
       data: { labels, datasets: [{ label:'Total', data, backgroundColor: 'rgba(0,170,255,0.7)' }] },
-      options: { responsive:true, maintainAspectRatio:false }
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
     });
   } else {
     monthlyChart.data.labels = labels; monthlyChart.data.datasets[0].data = data; monthlyChart.update();
@@ -542,7 +604,6 @@ function updateCharts(){
   }
 }
 
-/* start editing etc. already defined above */
 /* init */
 (function init(){
   load();
@@ -557,7 +618,7 @@ searchInput.addEventListener('input', ()=> render());
 filterMonth.addEventListener('change', ()=> render());
 sortBy.addEventListener('change', ()=> render());
 
-/* Utility: handle Enter in search to clear focus */
+/* Utility: handle Escape in search to clear focus */
 searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ searchInput.value=''; render(); } });
 
 </script>
